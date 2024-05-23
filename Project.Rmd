@@ -1,3 +1,16 @@
+---
+title: "Tesla Supercharger Analysis"
+author: "Jim-Lee Wu and Fion Huang"
+subtitle: 
+output:
+  pdf_document:
+    number_sections: true
+  html_document:
+    number_sections: true
+  word_document: default
+---
+
+
 ```{r}
 tesla <- read.csv("Tesla Dataset.csv")
 tesla
