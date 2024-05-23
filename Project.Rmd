@@ -1,0 +1,4 @@
+```{r}
+tesla <- read.csv("Tesla Dataset.csv")
+tesla
+```
