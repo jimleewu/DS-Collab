@@ -42,15 +42,15 @@ tesla %>%
 
 `county` County of City
 
-`population`
+`population` 2022 Population 
 
-`land_size`
+`land_size` 2020 Land area in square miles
 
 `medium_income` medium household income in 2018-2022 (in 2022 dollars)
 
 `per_capita_income` per_capita_income: mean income of every person in 2018-2022 (in 2022 dollars)
 
-`no_stations`
+`no_stations` the number of Tesla Supercharger stations
 
 `mile` the number of stations that are less than one mile from a highway/freeway
 
