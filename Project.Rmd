@@ -11,6 +11,7 @@ output:
 ---
 ```{r}
 library(tidyverse)
+library(corrplot)
 ```
 
 
@@ -25,34 +26,42 @@ tesla <- read.csv("Tesla Dataset.csv")
 tesla
 ```
 
+```{r}
+tesla %>%
+  select_if(is.numeric) %>%
+  cor() %>%
+  corrplot.mixed()
+```
+
+
 ## How The Data Was Collected
 
-Parameters
+## Parameters
 
-`city` 
+`city` City
 
-`county`
+`county` County of City
 
 `population`
 
 `land_size`
 
-`medium_income`
+`medium_income` medium household income in 2018-2022 (in 2022 dollars)
 
-`per_capita_income`
+`per_capita_income` per_capita_income: mean income of every person in 2018-2022 (in 2022 dollars)
 
 `no_stations`
 
-`mile`
+`mile` the number of stations that are less than one mile from a highway/freeway
 
-`more_than_12`
+`more_than_12` the number of stations that have more than 12 chargers
 
-`no_v2`
+`no_v2`the number of V2 chargers
 
-`no_urban`
+`no_urban` the number of urban chargers
 
-`no_v3`
+`no_v3` the number of V3 chargers
 
-`no_v4`
+`no_v4` the number of V4 chargers
 
-`total`
+`total` total number of chargers
