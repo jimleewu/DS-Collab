@@ -65,15 +65,6 @@ tesla
 tesla_numeric <- tesla %>%
   select_if(is.numeric)
 
-tesla_numeric %>% 
-  select(-no_v4) %>% # none of our cities contain a v4 charger
-  cor() %>%
-  corrplot.mixed()
-```
-
-## Linear Model
-
-```{r}
 tesla_model <- tesla_numeric %>%
   select(-more_than_12) %>%
   select(-no_v2) %>%
@@ -82,8 +73,18 @@ tesla_model <- tesla_numeric %>%
   select(-no_v4) %>%
   select(-total) %>%
   select(-mile)
+
+tesla_model
 ```
 
+```{r}
+
+tesla_model %>%  # none of our cities contain a v4 charger
+  cor() %>%
+  corrplot.mixed()
+```
+
+## Linear Model
 
 ```{r}
 linear_model <- lm(no_stations ~ ., data = tesla_model)
