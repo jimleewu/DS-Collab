@@ -17,13 +17,13 @@ library(corrplot)
 
 # Introduction
 
-There has been an increasing rise in popularity in electronic vehicles (EVs) throughout the past decade for its environmental, economic, and performance benefits. With so many EVs filling the streets, a need for a proper EV charging infastructure is needed. Just like gasoline cars, EV drivers require charging stations where they can recharge when going long distances. 
+There has been an increasing rise in popularity in electronic vehicles (EVs) throughout the past decade for its environmental, economic, and performance benefits. With so many EVs filling the streets, a need for a proper EV charging infrastructure is needed. Just like gasoline cars, EV drivers require charging stations where they can recharge when going long distances. 
 
 ## Dataset
 
 ```{r}
 tesla <- read.csv("Tesla Dataset.csv")
-tesla 
+View(tesla) 
 ```
 
 ## How The Data Was Collected
@@ -78,7 +78,6 @@ tesla_model
 ```
 
 ```{r}
-
 tesla_model %>%  # none of our cities contain a v4 charger
   cor() %>%
   corrplot.mixed()
