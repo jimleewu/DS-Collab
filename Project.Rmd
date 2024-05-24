@@ -23,18 +23,11 @@ There has been an increasing rise in popularity in electronic vehicles (EVs) thr
 
 ```{r}
 tesla <- read.csv("Tesla Dataset.csv")
-tesla
+tesla 
 ```
-
-```{r}
-tesla %>%
-  select_if(is.numeric) %>%
-  cor() %>%
-  corrplot.mixed()
-```
-
 
 ## How The Data Was Collected
+
 
 ## Parameters
 
@@ -65,3 +58,35 @@ tesla %>%
 `no_v4` the number of V4 chargers
 
 `total` total number of chargers
+
+## Exploratory Data Analysis
+
+```{r}
+tesla_numeric <- tesla %>%
+  select_if(is.numeric)
+
+tesla_numeric %>% 
+  select(-no_v4) %>% # none of our cities contain a v4 charger
+  cor() %>%
+  corrplot.mixed()
+```
+
+## Linear Model
+
+```{r}
+tesla_model <- tesla_numeric %>%
+  select(-more_than_12) %>%
+  select(-no_v2) %>%
+  select(-no_urban) %>%
+  select(-no_v3) %>%
+  select(-no_v4) %>%
+  select(-total) %>%
+  select(-mile)
+```
+
+
+```{r}
+linear_model <- lm(no_stations ~ ., data = tesla_model)
+summary(linear_model)
+```
+
