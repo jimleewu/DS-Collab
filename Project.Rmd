@@ -9,11 +9,50 @@ output:
     number_sections: true
   word_document: default
 ---
+```{r}
+library(tidyverse)
+```
 
+
+# Introduction
+
+There has been an increasing rise in popularity in electronic vehicles (EVs) throughout the past decade for its environmental, economic, and performance benefits. With so many EVs filling the streets, a need for a proper EV charging infastructure is needed. Just like gasoline cars, EV drivers require charging stations where they can recharge when going long distances. 
+
+## Dataset
 
 ```{r}
 tesla <- read.csv("Tesla Dataset.csv")
 tesla
 ```
 
+## How The Data Was Collected
+
 Parameters
+
+`city` 
+
+`county`
+
+`population`
+
+`land_size`
+
+`medium_income`
+
+`per_capita_income`
+
+`no_stations`
+
+`mile`
+
+`more_than_12`
+
+`no_v2`
+
+`no_urban`
+
+`no_v3`
+
+`no_v4`
+
+`total`
