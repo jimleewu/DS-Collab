@@ -21,6 +21,20 @@ There has been an increasing rise in popularity in electronic vehicles (EVs) thr
 
 ## Dataset
 
+The data from this data set was gathered via various many online sources. When deciding on location, we wanted to focus on a state that we were familiar with so we chose California. When collecting data, we chose to only collect data from counties that had a population greater than 500,000. The reason we made this decision was because we wanted to focus more on higher populated counties. Our data set contains 16 counties and will contain 296 observations. 
+
+Counties have a combination of towns, unincorporated cities, and incorporated cities. In our data set, we are ONLY considering incorporated cities. 
+
+As for how the data was collected, the parameters: 
+
+`population`, `land_size`, `medium_income`, and `per_capita_income` were scraped from the [US Census](https://www.census.gov/quickfacts/) (Some cities found through [Census Reporter]())
+
+`registered_voter`,	`democratic`, and	`republican` were scraped from [](https://www.sos.ca.gov/elections/report-registration/ror-odd-year-2019/)
+
+`no_stations`,	`more_than_12`,	`no_v2`,	`no_urban`,	`no_v3`,	`no_v4`, and `total` were scraped from []()
+
+`mile` was self obtained from Google Maps using the "Look Up Distance" feature.
+
 ```{r}
 tesla <- read.csv("Tesla Dataset.csv")
 View(tesla) 
