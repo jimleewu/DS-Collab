@@ -37,11 +37,11 @@ The data set that we will be working on in this project is called `tesla`. The d
 
 `per_capita_income` per_capita_income: mean income of every person in 2018-2022 (in 2022 dollars)
 
-`registered_voter` 
+`registered_voter` the number of registered voters (March 11, 2022)
 
-`democratic`
+`democratic` the number of registered voters declared as democratic (March 11, 2022)
 
-`republican`
+`republican`the number of registered voters declared as republican (March 11, 2022)
 
 `no_stations` the number of Tesla Supercharger stations
 
@@ -69,7 +69,7 @@ As for how the data was collected, the parameters:
 
 `population`, `land_size`, `medium_income`, and `per_capita_income` were scraped from the [US Census](https://www.census.gov/quickfacts/). The following cities: Maricopa, Isleton, Indian Wells, Del Mar, Monte Sereno, Brisbane, Vernon, Rolling Hills, Irwindale, Industry, Hidden Hills, Bradbury, and Avalon were not found on the US Census so we scraped the demopgraphic data from the [Census Reporter](https://censusreporter.org/).
 
-`registered_voter`, `democratic`, and `republican` were scraped from [Report of Registration](https://www.sos.ca.gov/elections/report-registration/ror-odd-year-2019/). This data comes from the California Secretary of State and was reported on February 10, 2019.
+`registered_voter`, `democratic`, and `republican` were scraped from [Report of Registration](https://www.sos.ca.gov/elections/report-registration/88day-primary-2022). This data comes from the California Secretary of State and was reported on March 11, 2022.
 
 `no_stations`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and `total` were scraped from [Supercharge.io](https://supercharge.info/changes), a community based forum centered on Tesla Supercharger data world-wide. The data we collected from Supercharge.io was done on April 30, 2024.
 
@@ -81,10 +81,65 @@ Lets load the data set and view it.
 
 ```{r}
 tesla <- read.csv("Tesla Dataset.csv")
-View(tesla) 
+tesla
 ```
 
 ## Exploratory Data Analysis
+
+
+```{r}
+tesla %>% 
+  ggplot(aes(no_stations)) + 
+  geom_bar(fill = "black") + 
+  labs(title = "Distribution of Number of Stations")
+
+tesla %>% 
+  mutate(no_stations = as.factor(no_stations)) %>%
+  mutate(no_stations = fct_lump_n(no_stations, n = 1, other_level = "1+ Stations",)) %>%
+  ggplot(aes(no_stations)) + 
+  geom_bar(fill = "black") + 
+  labs(title = "Distribution of Number of Stations")
+```
+
+```{r}
+ggplot(tesla, aes(x = population, y = total)) +
+  geom_point() +
+  labs(title = "Population vs. Total Number of Chargers",
+       x = "Population (2022)",
+       y = "Total Number of Chargers")
+```
+
+```{r}
+data_long <- tesla %>%
+  pivot_longer(cols = starts_with("no_"), names_to = "charger_type", values_to = "count")
+
+ggplot(data_long, aes(x = city, y = count, fill = charger_type)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = "Number of Different Types of Chargers by City",
+       x = "City",
+       y = "Count",
+       fill = "Charger Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+ggplot(tesla, aes(x = city, y = mile)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Number of Tesla Supercharger Stations within One Mile of a Highway by City",
+       x = "City",
+       y = "Number of Stations")
+```
+
+
+
+
+
+
+
+
+
 
 ```{r}
 tesla_numeric <- tesla %>%
