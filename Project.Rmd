@@ -9,39 +9,19 @@ output:
     number_sections: true
   word_document: default
 ---
+
 ```{r}
 library(tidyverse)
 library(corrplot)
 ```
 
-
 # Introduction
 
-There has been an increasing rise in popularity in electronic vehicles (EVs) throughout the past decade for its environmental, economic, and performance benefits. With so many EVs filling the streets, a need for a proper EV charging infrastructure is needed. Just like gasoline cars, EV drivers require charging stations where they can recharge when going long distances. 
+There has been an increasing rise in popularity in electronic vehicles (EVs) throughout the past decade for its environmental, economic, and performance benefits. With so many EVs filling the streets, a need for a proper EV charging infrastructure is needed. Just like gasoline cars, EV drivers require charging stations where they can recharge when going long distances.
 
-## Dataset
+# Dataset
 
-The data from this data set was gathered via various many online sources. When deciding on location, we wanted to focus on a state that we were familiar with so we chose California. When collecting data, we chose to only collect data from counties that had a population greater than 500,000. The reason we made this decision was because we wanted to focus more on higher populated counties. Our data set contains 16 counties and will contain 296 observations. 
-
-Counties have a combination of towns, unincorporated cities, and incorporated cities. In our data set, we are ONLY considering incorporated cities. 
-
-As for how the data was collected, the parameters: 
-
-`population`, `land_size`, `medium_income`, and `per_capita_income` were scraped from the [US Census](https://www.census.gov/quickfacts/) (Some cities found through [Census Reporter]())
-
-`registered_voter`,	`democratic`, and	`republican` were scraped from [](https://www.sos.ca.gov/elections/report-registration/ror-odd-year-2019/)
-
-`no_stations`,	`more_than_12`,	`no_v2`,	`no_urban`,	`no_v3`,	`no_v4`, and `total` were scraped from []()
-
-`mile` was self obtained from Google Maps using the "Look Up Distance" feature.
-
-```{r}
-tesla <- read.csv("Tesla Dataset.csv")
-View(tesla) 
-```
-
-## How The Data Was Collected
-
+The data set that we will be working on in this project is called `tesla`. The data consist of all cities from highly populated counties in California. The counties in our data set consist of Alameda, Contra Costa, Fresno, Kern, Los Angeles, Orange, Riverside, Sacramento, San Diego, San Francisco, San Joaquin, San Mateo, Santa Barbara, Santa Clara, Stanislaus, and Ventura. We collected demographic data and Tesla Supercharging data for each city in the before mention counties.
 
 ## Parameters
 
@@ -49,13 +29,19 @@ View(tesla)
 
 `county` County of City
 
-`population` 2022 Population 
+`population` 2022 Population
 
 `land_size` 2020 Land area in square miles
 
 `medium_income` medium household income in 2018-2022 (in 2022 dollars)
 
 `per_capita_income` per_capita_income: mean income of every person in 2018-2022 (in 2022 dollars)
+
+`registered_voter` 
+
+`democratic`
+
+`republican`
 
 `no_stations` the number of Tesla Supercharger stations
 
@@ -72,6 +58,31 @@ View(tesla)
 `no_v4` the number of V4 chargers
 
 `total` total number of chargers
+
+## How The Data Was Collected
+
+The data from this data set was gathered via various many online sources. When deciding on location, we wanted to focus on a state that we were familiar with so we chose California. When collecting data, we chose to only collect data from counties that had a population greater than 500,000. The reason we made this decision was because we wanted to focus more on higher populated counties. Our data set contains 16 counties and will contain 296 observations.
+
+Counties have a combination of towns, unincorporated cities, and incorporated cities. In our data set, we are ONLY considering incorporated cities.
+
+As for how the data was collected, the parameters:
+
+`population`, `land_size`, `medium_income`, and `per_capita_income` were scraped from the [US Census](https://www.census.gov/quickfacts/). The following cities: Maricopa, Isleton, Indian Wells, Del Mar, Monte Sereno, Brisbane, Vernon, Rolling Hills, Irwindale, Industry, Hidden Hills, Bradbury, and Avalon were not found on the US Census so we scraped the demopgraphic data from the [Census Reporter](https://censusreporter.org/).
+
+`registered_voter`, `democratic`, and `republican` were scraped from [Report of Registration](https://www.sos.ca.gov/elections/report-registration/ror-odd-year-2019/). This data comes from the California Secretary of State and was reported on February 10, 2019.
+
+`no_stations`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and `total` were scraped from [Supercharge.io](https://supercharge.info/changes), a community based forum centered on Tesla Supercharger data world-wide. The data we collected from Supercharge.io was done on April 30, 2024.
+
+`mile` was self obtained from Google Maps using the "Measure Distance" feature. This distance was measured from each Tesla Supercharger station to the nearest highway/freeway enterance.
+
+## Loading the data set
+
+Lets load the data set and view it.
+
+```{r}
+tesla <- read.csv("Tesla Dataset.csv")
+View(tesla) 
+```
 
 ## Exploratory Data Analysis
 
@@ -103,4 +114,3 @@ tesla_model %>%  # none of our cities contain a v4 charger
 linear_model <- lm(no_stations ~ ., data = tesla_model)
 summary(linear_model)
 ```
-
