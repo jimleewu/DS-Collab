@@ -12,9 +12,14 @@ output:
 
 ```{r}
 library(tidyverse)
-library(rsample)
 library(tidymodels)
+library(rsample)
 library(corrplot)
+library(ranger)
+library(glmnet)
+library(kknn)
+library(xgboost)
+library(ggplot2)
 ```
 
 # Introduction
@@ -195,7 +200,7 @@ tesla_test <- testing(tesla_split)
 ## Recipe
 
 ```{r}
-tesla_recipe <- recipe(no_stations ~ county + population + land_size + 
+tesla_recipe <- recipe(no_stations ~  county + population + land_size + 
                          medium_income + per_capita_income + registered_voter +
                          democratic + republican, data = tesla_train) %>%
   step_dummy(all_nominal_predictors()) %>%
@@ -206,7 +211,7 @@ tesla_recipe <- recipe(no_stations ~ county + population + land_size +
 ## Model
 
 ```{r}
-tesla_folds <- vfold_cv(tesla_train, v = 10, strata = no_stations)
+tesla_folds <- vfold_cv(tesla_train, v = 5, strata = no_stations)
 ```
 
 1. Setting up the model
@@ -227,12 +232,11 @@ random_forest_model <- rand_forest(mtry=tune(),
   set_engine("ranger") %>%
   set_mode("regression")
 
-# Gradient Boosted Tree Model
-bt_model <- boost_tree(mtry=tune(),
-                     trees = tune(),
-                     learn_rate = tune()) %>%
-  set_engine("xgboost") %>%
-  set_mode("regression")
+# Elastic Net
+elastic_model <- linear_reg(mixture = tune(), 
+    penalty = tune()) %>%
+  set_mode("regression") %>%
+  set_engine("glmnet")
 ```
 
 2. Creating Workflow
@@ -252,10 +256,6 @@ random_forest_workflow <- workflow() %>%
   add_model(random_forest_model) %>%
   add_recipe(tesla_recipe)
 
-# Gradient Boosted Tree
-bt_workflow <- workflow() %>%
-  add_model(bt_model) %>%
-  add_recipe(tesla_recipe)
 ```
 
 3. Creating Grid
@@ -269,11 +269,6 @@ rf_grid <- grid_regular(mtry(range = c(1, 6)),
                         min_n(range = c(10, 20)),
                         levels = 5)
 
-# Boosted Tree
-bt_grid <- grid_regular(mtry(range = c(1, 6)), 
-                        trees(range = c(200, 600)),
-                        learn_rate(range = c(-10, -1)),
-                        levels = 5)
 ```
 
 4. Tune Model
@@ -285,9 +280,6 @@ knn_tune <- tune_grid(knn_workflow, resamples = tesla_folds, grid = knn_grid)
 tune_rf <- tune_grid(
   object = random_forest_workflow, resamples = tesla_folds, grid = rf_grid)
 
-# Gradient Boosted Tree
-tune_bt <- tune_grid(
-  object = bt_workflow, resamples = tesla_folds, grid = bt_grid)
 ```
 
 5. Collect metrics
