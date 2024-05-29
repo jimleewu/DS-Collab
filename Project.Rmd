@@ -213,7 +213,6 @@ lm_model <- linear_reg() %>%
 knn_model <- nearest_neighbor(neighbors = tune()) %>%
   set_engine("kknn") %>%
   set_mode("classification")
-
 ```
 
 2. Creating Workflow
@@ -226,14 +225,7 @@ lm_workflow <- workflow() %>%
 # KNN
 knn_wkflow <- workflow() %>% 
   add_model(knn_model) %>% 
-  add_recipe(mushroom_recipe)
-
-
-# Use `finalize_workflow()` and `fit()` to fit the model to the training set
-knn_final <- finalize_workflow(knn_wkflow, select_best(knn_tune))
-knn_final
-knn_final_fit <- fit(knn_final, train)
-knn_final_fit
+  add_recipe(tesla_recipe)
 ```
 
 3. Creating Grid
@@ -250,13 +242,14 @@ lm_rmse
 
 #KNN
 collect_metrics(knn_tune)
-# Use `show_best()` to choose the model that has the optimal `roc_auc`.
 show_best(knn_tune, metric = "roc_auc")
-
-
 ```
 
-## KNN
+5. Fitting the model
 ```{r}
-
+# Use `finalize_workflow()` and `fit()` to fit the model to the training set
+knn_final <- finalize_workflow(knn_wkflow, select_best(knn_tune))
+knn_final
+knn_final_fit <- fit(knn_final, tesla_train)
+knn_final_fit
 ```
