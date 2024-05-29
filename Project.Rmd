@@ -234,6 +234,7 @@ knn_wkflow <- workflow() %>%
 knn_grid <- grid_regular(neighbors(range = c(1,10)), levels = 10)
 ```
 
+4. Collect metrics
 ```{r}
 # Linear Model
 lm_fit <- fit_resamples(lm_workflow, resamples = tesla_folds)
@@ -247,7 +248,7 @@ show_best(knn_tune, metric = "roc_auc")
 
 5. Fitting the model
 ```{r}
-# Use `finalize_workflow()` and `fit()` to fit the model to the training set
+# KNN
 knn_final <- finalize_workflow(knn_wkflow, select_best(knn_tune))
 knn_final
 knn_final_fit <- fit(knn_final, tesla_train)
