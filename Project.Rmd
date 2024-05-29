@@ -12,6 +12,8 @@ output:
 
 ```{r}
 library(tidyverse)
+library(rsample)
+library(tidymodels)
 library(corrplot)
 ```
 
@@ -152,6 +154,11 @@ ggplot(tesla, aes(x=population, y=no_stations, col=county))+
 
 
 ```{r}
+tesla_model <- tesla %>%
+  select_if(is.numeric) %>%
+  select(-no_v4)
+
+
 tesla_model %>%  # none of our cities contain a v4 charger
   cor() %>%
   corrplot.mixed()
