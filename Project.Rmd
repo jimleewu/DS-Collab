@@ -216,9 +216,22 @@ lm_model <- linear_reg() %>%
   set_engine("lm")
 
 # KNN
-# Setting up the model
 knn_model <- nearest_neighbor(neighbors = tune()) %>%
   set_engine("kknn") %>%
+  set_mode("regression")
+
+# Random Forest
+random_forest_model <- rand_forest(mtry=tune(),
+                                 trees = tune(),
+                                 min_n = tune()) %>%
+  set_engine("ranger") %>%
+  set_mode("regression")
+
+# Gradient Boosted Tree Model
+bt_model <- boost_tree(mtry=tune(),
+                     trees = tune(),
+                     learn_rate = tune()) %>%
+  set_engine("xgboost") %>%
   set_mode("regression")
 ```
 
@@ -230,8 +243,18 @@ lm_workflow <- workflow() %>%
   add_recipe(tesla_recipe)
 
 # KNN
-knn_wkflow <- workflow() %>% 
+knn_workflow <- workflow() %>% 
   add_model(knn_model) %>% 
+  add_recipe(tesla_recipe)
+
+# Random Forest
+random_forest_workflow <- workflow() %>%
+  add_model(random_forest_model) %>%
+  add_recipe(tesla_recipe)
+
+# Gradient Boosted Tree
+bt_workflow <- workflow() %>%
+  add_model(bt_model) %>%
   add_recipe(tesla_recipe)
 ```
 
@@ -239,28 +262,59 @@ knn_wkflow <- workflow() %>%
 ```{r}
 # KNN
 knn_grid <- grid_regular(neighbors(range = c(1,10)), levels = 10)
+
+# Random Forest
+rf_grid <- grid_regular(mtry(range = c(1, 6)), 
+                        trees(range = c(200, 600)),
+                        min_n(range = c(10, 20)),
+                        levels = 5)
+
+# Boosted Tree
+bt_grid <- grid_regular(mtry(range = c(1, 6)), 
+                        trees(range = c(200, 600)),
+                        learn_rate(range = c(-10, -1)),
+                        levels = 5)
 ```
 
 4. Tune Model
 ```{r}
 # KNN 
-knn_tune <- tune_grid(knn_wkflow, resamples = tesla_folds, grid = knn_grid)
+knn_tune <- tune_grid(knn_workflow, resamples = tesla_folds, grid = knn_grid)
+
+# Random Forest
+tune_rf <- tune_grid(
+  object = random_forest_workflow, resamples = tesla_folds, grid = rf_grid)
+
+# Gradient Boosted Tree
+tune_bt <- tune_grid(
+  object = bt_workflow, resamples = tesla_folds, grid = bt_grid)
 ```
+
 5. Collect metrics
 ```{r}
 # Linear Model
 lm_fit <- fit_resamples(lm_workflow, resamples = tesla_folds)
 lm_rmse <- collect_metrics(lm_fit)
-lm_rmse
 
-#KNN
-select_best(knn_tune, metric = "rmse")
+# KNN
+knn_rmse <- collect_metrics(knn_tune) %>%
+  filter(.metric=='rmse')%>%
+  arrange(mean)
+
+# Random Forest
+rf_rmse <- collect_metrics(tune_rf) %>%
+  filter(.metric=='rmse') %>%
+  arrange(mean)
+
+lm_rmse
+knn_rmse
+rf_rmse
 ```
 
 5. Fitting the model
 ```{r}
 # KNN
-knn_final <- finalize_workflow(knn_wkflow, select_best(knn_tune))
+knn_final <- finalize_workflow(knn_workflow, select_best(knn_tune))
 knn_final
 knn_final_fit <- fit(knn_final, tesla_train)
 knn_final_fit
