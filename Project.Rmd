@@ -191,8 +191,8 @@ tesla_test <- testing(tesla_split)
 tesla_recipe <- recipe(no_stations ~ county + population + land_size + 
                          medium_income + per_capita_income + registered_voter +
                          democratic + republican, data = tesla_train) %>%
-  step_zv(all_nominal_predictors()) %>%
   step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors()) %>%
   step_normalize(all_predictors()) 
 ```
 
@@ -216,5 +216,6 @@ lm_workflow <- workflow() %>%
 ```{r}
 lm_fit <- fit_resamples(lm_workflow, resamples = tesla_folds)
 lm_rmse <- collect_metrics(lm_fit)
+lm_rmse
 ```
 
