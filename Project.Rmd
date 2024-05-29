@@ -241,7 +241,11 @@ knn_wkflow <- workflow() %>%
 knn_grid <- grid_regular(neighbors(range = c(1,10)), levels = 10)
 ```
 
-4. Collect metrics
+4. Tune Model
+```{r}
+
+```
+5. Collect metrics
 ```{r}
 # Linear Model
 lm_fit <- fit_resamples(lm_workflow, resamples = tesla_folds)
