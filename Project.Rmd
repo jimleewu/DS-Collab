@@ -237,6 +237,13 @@ elastic_model <- linear_reg(mixture = tune(),
     penalty = tune()) %>%
   set_mode("regression") %>%
   set_engine("glmnet")
+
+# Boosted Tree
+boosted_tree_model <- boost_tree(mtry = tune(), 
+                           trees = tune(), 
+                           learn_rate = tune()) %>%
+  set_engine("xgboost") %>% 
+  set_mode("regression")
 ```
 
 2. Creating Workflow
@@ -256,6 +263,11 @@ random_forest_workflow <- workflow() %>%
   add_model(random_forest_model) %>%
   add_recipe(tesla_recipe)
 
+# Boosted Tree
+boosted_tree_workflow <- workflow() %>% 
+  add_model(boosted_tree_model) %>% 
+  add_recipe(tesla_recipe)
+
 ```
 
 3. Creating Grid
@@ -269,6 +281,12 @@ rf_grid <- grid_regular(mtry(range = c(1, 6)),
                         min_n(range = c(10, 20)),
                         levels = 5)
 
+# Boosted Tree
+bt_grid <- grid_regular(mtry(range = c(1, 6)), 
+                        trees(range = c(200, 600)),
+                        learn_rate(range = c(-10, -1)),
+                        levels = 5)
+
 ```
 
 4. Tune Model
@@ -279,6 +297,9 @@ knn_tune <- tune_grid(knn_workflow, resamples = tesla_folds, grid = knn_grid)
 # Random Forest
 tune_rf <- tune_grid(
   object = random_forest_workflow, resamples = tesla_folds, grid = rf_grid)
+
+# Boosted Tree
+bt_tune <- tune_grid(boosted_tree_workflow, resamples = tesla_folds, grid = bt_grid)
 
 ```
 
@@ -298,9 +319,15 @@ rf_rmse <- collect_metrics(tune_rf) %>%
   filter(.metric=='rmse') %>%
   arrange(mean)
 
+# Boosted Tree
+bt_rms <- collect_metrics(bt_tune) %>%
+  filter(.metric=='rmse') %>%
+  arrange(mean)
+
 lm_rmse
 knn_rmse
 rf_rmse
+bt_rms
 ```
 
 5. Fitting the model
@@ -310,4 +337,8 @@ knn_final <- finalize_workflow(knn_workflow, select_best(knn_tune))
 knn_final
 knn_final_fit <- fit(knn_final, tesla_train)
 knn_final_fit
+
+# Boosted Tree
+final_rf_model <- finalize_workflow(rf_reg_wf, best_rf_reg)
+final_rf_model <- fit(final_rf_model, wage_train)
 ```
