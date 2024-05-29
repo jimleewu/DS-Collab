@@ -243,7 +243,8 @@ knn_grid <- grid_regular(neighbors(range = c(1,10)), levels = 10)
 
 4. Tune Model
 ```{r}
-
+# KNN 
+knn_tune <- tune_grid(knn_wkflow, resamples = tesla_folds, grid = knn_grid)
 ```
 5. Collect metrics
 ```{r}
