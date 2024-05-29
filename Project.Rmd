@@ -219,7 +219,7 @@ lm_model <- linear_reg() %>%
 # Setting up the model
 knn_model <- nearest_neighbor(neighbors = tune()) %>%
   set_engine("kknn") %>%
-  set_mode("classification")
+  set_mode("regression")
 ```
 
 2. Creating Workflow
@@ -254,8 +254,7 @@ lm_rmse <- collect_metrics(lm_fit)
 lm_rmse
 
 #KNN
-collect_metrics(knn_tune)
-show_best(knn_tune, metric = "roc_auc")
+select_best(knn_tune, metric = "rmse")
 ```
 
 5. Fitting the model
