@@ -339,6 +339,6 @@ knn_final_fit <- fit(knn_final, tesla_train)
 knn_final_fit
 
 # Boosted Tree
-final_rf_model <- finalize_workflow(rf_reg_wf, best_rf_reg)
-final_rf_model <- fit(final_rf_model, wage_train)
+bt_final <- finalize_workflow(boosted_tree_workflow, select_best(bt_tune))
+bt_final_fit <- fit(bt_final, tesla_train)
 ```
