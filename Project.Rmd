@@ -152,31 +152,69 @@ ggplot(tesla, aes(x=population, y=no_stations, col=county))+
 
 
 ```{r}
-tesla_numeric <- tesla %>%
-  select_if(is.numeric)
-
-tesla_model <- tesla_numeric %>%
-  select(-more_than_12) %>%
-  select(-no_v2) %>%
-  select(-no_urban) %>%
-  select(-no_v3) %>%
-  select(-no_v4) %>%
-  select(-total) %>%
-  select(-mile)
-
-tesla_model
-```
-
-```{r}
 tesla_model %>%  # none of our cities contain a v4 charger
   cor() %>%
   corrplot.mixed()
 ```
 
+# Model Building
+
+We will be removing the following variables: `city`, `mile`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and total. We are doing this because we want to build a model that can predict the no_stations based on demographic data of each observation. This updated data set will be called `tesla_model`
+
+```{r}
+tesla_model <- tesla %>%
+  select(-city) %>%
+  select(-mile) %>%
+  select(-more_than_12) %>%
+  select(-no_v2) %>%
+  select(-no_urban) %>%
+  select(-no_v3) %>%
+  select(-no_v4) %>%
+  select(-total)
+
+head(tesla_model)
+```
+
+## Data Split
+
+We will first begin with splitting out data into training and testing data. The purpose of doing so is to build and train our predictive model on our training data and test the model on unseen data (the testing data). For this project, we will be using a 70/30 training to testing split.
+
+```{r}
+tesla_split <- initial_split(tesla_model, prop = 0.7, strata = no_stations)
+tesla_train <- training(tesla_split)
+tesla_test <- testing(tesla_split)
+```
+
+## Recipe
+
+```{r}
+tesla_recipe <- recipe(no_stations ~ county + population + land_size + 
+                         medium_income + per_capita_income + registered_voter +
+                         democratic + republican, data = tesla_train) %>%
+  step_zv(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_predictors()) 
+```
+
 ## Linear Model
 
 ```{r}
-linear_model <- lm(no_stations ~ county * population, data = tesla)
-summary(linear_model)
+tesla_folds <- vfold_cv(tesla_train, v = 10, strata = no_stations)
+```
+
+```{r}
+lm_model <- linear_reg() %>% 
+  set_engine("lm")
+```
+
+```{r}
+lm_workflow <- workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(tesla_recipe)
+```
+
+```{r}
+lm_fit <- fit_resamples(lm_workflow, resamples = tesla_folds)
+lm_rmse <- collect_metrics(lm_fit)
 ```
 
