@@ -211,6 +211,24 @@ corr_model %>%
 
 # Model Building
 
+We will now start building the models with our recipe we created earlier and we will be tuning our models with the folds we mentioned in the previous step. After tuning, we will examine the ROC_AUC metric across all of our models to see which model performed the best on the training data. We are using the ROC_AUC because it provides a single scalar value that quantifies the overall performance of the model, making it easy to interpret and compare across different models. The ROC curve will also provide a visual representation of the model's performance across all classification thresholds. We will be creating three models: K-Nearest Neighbors, Random Forest, and Elastic Net Multi-Nominal Regression.
+
+## Explanation of each model
+
+A quick explantion of each model we will be building.
+
+### K - Nearest Neightbors 
+
+The k-Nearest Neighbors (k-NN) classification model is a straightforward and intuitive machine learning algorithm used for classifying data points based on the categories of their nearest neighbors. It operates by storing all the training data and does not involve a traditional training phase. When a new data point needs to be classified, the algorithm calculates the distance between this point and all points in the training dataset using a distance metric such as Euclidean distance. It then identifies the k nearest neighbors to the query point, where k is a user-defined constant. The new data point is classified based on a majority vote among the k nearest neighbors, meaning it is assigned the class that is most common among these neighbors. k-NN can be computationally intensive and sensitive to irrelevant features and high-dimensional data. Despite its limitations, k-NN remains a powerful tool for both classification and regression tasks, particularly when interpretability and simplicity are crucial.
+
+### Random Forest
+
+Random Forest is a versatile ensemble learning technique that utilizes the collective predictions of multiple decision trees to produce robust and accurate models. Each decision tree in the forest is trained independently on a random subset of the training data and a random subset of the features. This randomness helps to decorrelate the trees, reducing the risk of overfitting and improving generalization. During prediction, the results of individual trees are aggregated, typically through averaging for regression tasks or voting for classification tasks, to produce the final prediction. Random Forest models are known for their robustness to noisy data, ability to handle high-dimensional datasets, and automatic feature selection capabilities, making them widely applicable across various domains.
+
+### Elastic Net Multi-Nominal Regression
+
+Elastic Net Multi-Nominal Regression is a statistical technique that extends the traditional multinomial logistic regression model by incorporating both L1 (Lasso) and L2 (Ridge) regularization penalties. This hybrid regularization technique helps address issues such as multicollinearity and overfitting by penalizing the absolute size of the coefficients (L1 penalty) and their squared magnitude (L2 penalty). Elastic Net regression is particularly useful when dealing with high-dimensional datasets with many correlated predictors, as it encourages sparsity while also providing some level of stability and robustness. Elastic Net Multi-Nominal Regression is commonly used in machine learning and predictive modeling tasks where the goal is to classify observations into multiple categories based on a set of predictor variables.
+
 ## Data Split
 
 We will first begin with splitting out data into training and testing data. The purpose of doing so is to build and train our predictive model on our training data and test the model on unseen data (the testing data). For this project, we will be using a 70/30 training to testing split.
@@ -223,6 +241,8 @@ tesla_test <- testing(tesla_split)
 
 ## Recipe
 
+We will now start creating our recipe. We will create a universal recipe that can be used by all of our models . The recipe will include 8 predictors from our training tesla data set (tesla_train). These variables are `county`, `population`, `land_size`, `medium_income`, `per_capita_income`, `registered_voter`, `demoractic`, and `republican`. We will step_dummy our categorical predictors (county). We will also step_zv to clear any instances of zero variance. Lastly, we will scale and center all our predictors using step_normalize(). 
+
 ```{r}
 tesla_recipe <- recipe(no_stations ~  county + population + land_size + 
                          medium_income + per_capita_income + registered_voter +
@@ -232,10 +252,6 @@ tesla_recipe <- recipe(no_stations ~  county + population + land_size +
   step_normalize(all_predictors()) 
 ```
 
-## Model
-
-We will now start building the models with our recipe we created earlier and we will be tuning our models with the folds we mentioned in the previous step. After tuning, we will examine the ROC_AUC metric across all of our models to see which model performed the best on the training data. We are using the ROC_AUC because it provides a single scalar value that quantifies the overall performance of the model, making it easy to interpret and compare across different models. The ROC curve will also provide a visual representation of the model's performance across all classification thresholds. We will be creating three models: K-Nearest Neighbors, Random Forest, and Elastic Net Multi-Nominal Regression.
-
 ## K-Fold Cross Validation
 
 We will employ a k-fold stratified cross-validation approach with 5 folds, where the data set is divided into 5 equal-sized folds. During each iteration, one fold is reserved as the testing set, while the remaining 4 folds (k-1) collectively form the training set. This process is repeated until each fold has served as the testing set exactly once. Subsequently, the model is trained on each training set and evaluated on the corresponding testing set. The average accuracy across all folds is then computed to gauge performance. Metrics like ROC_AUC, accuracy, and standard error can be reviewed to determine performace. This methodology offers a more robust estimate of testing accuracy compared to training on the entire dataset, as it reduces variability by averaging results over multiple iterations.
@@ -244,19 +260,9 @@ We will employ a k-fold stratified cross-validation approach with 5 folds, where
 tesla_folds <- vfold_cv(tesla_train, v = 5, strata = no_stations)
 ```
 
-### K - Nearest Neightbors 
+## Creating The Models
 
-The k-Nearest Neighbors (k-NN) classification model is a straightforward and intuitive machine learning algorithm used for classifying data points based on the categories of their nearest neighbors. It operates by storing all the training data and does not involve a traditional training phase. When a new data point needs to be classified, the algorithm calculates the distance between this point and all points in the training dataset using a distance metric such as Euclidean distance. It then identifies the k nearest neighbors to the query point, where k is a user-defined constant. The new data point is classified based on a majority vote among the k nearest neighbors, meaning it is assigned the class that is most common among these neighbors. k-NN can be computationally intensive and sensitive to irrelevant features and high-dimensional data. Despite its limitations, k-NN remains a powerful tool for both classification and regression tasks, particularly when interpretability and simplicity are crucial.
-
-### Random Forest
-
-Random Forest is a versatile ensemble learning technique that utilizes the collective predictions of multiple decision trees to produce robust and accurate models. Each decision tree in the forest is trained independently on a random subset of the training data and a random subset of the features. This randomness helps to decorrelate the trees, reducing the risk of overfitting and improving generalization. During prediction, the results of individual trees are aggregated, typically through averaging for regression tasks or voting for classification tasks, to produce the final prediction. Random Forest models are known for their robustness to noisy data, ability to handle high-dimensional datasets, and automatic feature selection capabilities, making them widely applicable across various domains.
-
-#### Elastic Net Multi-Nominal Regression
-
-Elastic Net Multi-Nominal Regression is a statistical technique that extends the traditional multinomial logistic regression model by incorporating both L1 (Lasso) and L2 (Ridge) regularization penalties. This hybrid regularization technique helps address issues such as multicollinearity and overfitting by penalizing the absolute size of the coefficients (L1 penalty) and their squared magnitude (L2 penalty). Elastic Net regression is particularly useful when dealing with high-dimensional datasets with many correlated predictors, as it encourages sparsity while also providing some level of stability and robustness. Elastic Net Multi-Nominal Regression is commonly used in machine learning and predictive modeling tasks where the goal is to classify observations into multiple categories based on a set of predictor variables.
-
-1.  Setting up the model
+Creating the models for K-Nearest Neighbors, Random Forest, and Elastic Net Multi-Nominal Regression.
 
 ```{r}
 # KNN
@@ -278,7 +284,9 @@ elastic_model <- multinom_reg(mixture = tune(),
   set_mode("classification")
 ```
 
-2.  Creating Workflow
+## Creating the Workflows
+
+Creating the workflows for our models.
 
 ```{r}
 # KNN
@@ -298,7 +306,15 @@ elastic_workflow <- workflow() %>%
 
 ```
 
-3.  Creating Grid
+## Tuning Grid
+
+We will now create the tuning grids to specify the ranges for our parameters that the model will be tuning and how many levels.
+
+For K- Nearest Neighbors we will be tuning neighbors
+
+For Random Forest we will be tuning mtry: the number of randomly selected features considered at each split when constructing each decision tree in the forest, trees: the number of decision trees to include, and min_n: the minimum number of observations required to split a node further in each decision tree.
+
+For Elastic Net Multi-Nominal Regression we will be tuning penalty: how much the model is penalized for having large coefficients. and mixture: the balance between two types of penalties: L1 (Lasso) and L2 (Ridge)
 
 ```{r}
 # KNN
@@ -314,7 +330,9 @@ en_grid <- grid_regular(penalty(range = c(0, 1), trans = identity_trans()),
                         mixture(range = c(0, 1)), levels = 10)
 ```
 
-4.  Tune Model
+## Tuning Hyperparameters
+
+We will tune all three of our models and save them to their own rda file. We can load them back in anytime for faster load times and so we do not have to tune the models every time we want to see the results.
 
 ```{r}
 # KNN 
@@ -333,13 +351,19 @@ save(tune_rf, file = "tune_rf.rda")
 save(tune_elastic, file = "tune_elastic.rda")
 ```
 
+## Loading in our tuned models
+
 ```{r}
 load("knn_tune.rda")
 load("tune_rf.rda")
 load("tune_elastic.rda")
 ```
 
-5.  Collect metrics
+# Model Results
+
+## Obtaining ROC_AUC For Each Model
+
+Lets collect the ROC_AUC metric of our tuned models and arranged them in decreasing mean since we are looking for the model with the highest ROC_AUC. We will then head the data frame to get the model with the highest ROC_AUC.
 
 ```{r}
 # KNN
@@ -366,7 +390,9 @@ rf_mean
 elastic_mean
 ```
 
-5.  Fitting the model
+## Bar Chart For Comparisson
+
+We will now create a bar chart to compare the highest ROC_AUC of all the models
 
 ```{r}
 # Creating a tibble of all the models and their RMSE
@@ -391,11 +417,21 @@ When comparing the models on the cross-validated data, we can see that the Rando
 autoplot(tune_rf, metric = "roc_auc")
 ```
 
+We can see from the autoplot of the tuned random forest the the the min_n (Minimal Node Size) had minor effect on the results. Across all minimal node sizes, the ROC_AUC metric was between 0.76 and 0.80. The lower the mtry values (# Randomly Selected Predictors) were, the higher the ROC_AUC and starts to decrease as mtry increases. The model performs the best at lower numbers of randomly selected predictors. The number of trees does seem to effect the results as each graph shows how the amount of trees affect the performance of the model. 
+
+## Fit Best Model To Our Training Data
+
+We will now take the best model from the tuned random forest model and fit it to the training data. This will train that our best model one more time on the entire training data set.
+
 ```{r}
 best_rf <- select_best(tune_rf, metric = 'roc_auc')
 rf_final_workflow_train <- finalize_workflow(random_forest_workflow, best_rf)
 rf_final_fit_train <- fit(rf_final_workflow_train, data = tesla_train)
 ```
+
+## Testing The Model On Testing Data
+
+We wil; finally test our trained random forest model on our unseen testing data. 
 
 ```{r}
 tesla_predict <- augment(rf_final_fit_train, new_data = tesla_test)
@@ -410,4 +446,11 @@ conf_mat(tesla_predict, truth = no_stations,
          .pred_class) %>% 
   autoplot(type = "heatmap")
 ```
+Based on the confusion matrix our model correctly predicted:
+
+37 cities with `no_stations` = 0 out of 46 cities correctly 
+
+27 cities with `no_stations` = 1 out of 44 cities correctly
+
+# Conclusion 
 
