@@ -191,6 +191,7 @@ tesla_model <- tesla %>%
 head(tesla_model)
 ```
 
+### Correlation Plot 
 ```{r}
 corr_model <- tesla_model %>%
   mutate(no_stations = as.numeric(no_stations)) %>%
