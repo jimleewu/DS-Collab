@@ -3,14 +3,15 @@ title: "Tesla Supercharger Analysis"
 author: "Jim-Lee Wu and Fion Huang"
 subtitle: 
 output:
-  pdf_document:
-    number_sections: true
   html_document:
-    number_sections: true
-  word_document: default
+    toc: true
+    toc_float: true
+    code_folding: show
+  pdf_document:
+    toc: true
 ---
 
-```{r}
+```{r, include = FALSE}
 library(dplyr)
 library(tidyverse)
 library(tidymodels)
@@ -96,7 +97,7 @@ tesla <- read.csv("Tesla Dataset.csv")
 tesla <- tesla %>%
   mutate(county = as.factor(county)) %>%
   mutate(no_stations = as.factor(no_stations))
-tesla
+head(tesla, n=5)
 ```
 
 # Exploratory Data Analysis
@@ -170,16 +171,17 @@ ggplot(tesla, aes(x = no_stations, y = republican_proportion)) +
   labs(title = "Republican Proportion vs. Tesla Supercharging Station Presence")
 ```
 
-In the Political Affiliation v.s. Tesla Supercharging Station Presence plot, it shows the proportion of political affiliation among registered voters of each city to the number of stations a city has. We can see that overall, cities with 
+In the Political Affiliation v.s. Tesla Supercharging Station Presence plot, it shows the proportion of political affiliation among registered voters of each city to the number of stations a city has. We can see that overall, Tesla Supercharger stations are located in areas with higher democratic affiliation and with lower republican affiliations. 
 
 # Preparing Our Data Set For Model Building 
 
-For our model recipe, we will be removing the following variables: `city`, `mile`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and total. We are doing this because we want to build a model that can predict the no_stations based on demographic data of each observation. This updated data set will be called `tesla_model`
+For our model recipe, we will be removing the following variables: `city`, `mile`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and total. We are doing this because we want to build a model that can predict the no_stations based on demographic data of each observation. This updated data set will be called `tesla_model`. We will also be lumping our prediction variable `no_stations`.
 
 ```{r}
 tesla_model <- tesla %>%
   mutate(no_stations = fct_lump_n(no_stations, n = 1, other_level = "1")) %>%
-  mutate(no_stations = as.numeric(no_stations)) %>%
+  select(-democratic_proportion) %>%
+  select(-republican_proportion) %>%
   select(-city) %>%
   select(-mile) %>%
   select(-more_than_12) %>%
@@ -189,10 +191,10 @@ tesla_model <- tesla %>%
   select(-no_v4) %>%
   select(-total)
 
-tesla_model
+head(tesla_model, n=5)
 ```
 
-### Correlation Plot 
+## Correlation Plot 
 ```{r}
 corr_model <- tesla_model %>%
   mutate(no_stations = as.numeric(no_stations)) %>%
@@ -202,10 +204,11 @@ corr_model %>%
   cor() %>%
   corrplot.mixed()
 ```
+The correlation plot shows the correlation between all of the numeric variables we will be using for our model. We can see a strong positive correlation between population with registered_voters, democratic, and republican. This makes sense because the proportion of voters to population should generally be the same across cities and they are all highly correlated with each other already. There is a slight positive corelation between population and land_size. It is typical to think that bigger land can occupy larger populations, but this can be caused by a multitude of reasons.
 
 # Model Building
 
-We will now start building the models with our recipe we created earlier and we will be tuning our models with the folds we mentioned in the previous step. After tuning, we will examine the ROC_AUC metric across all of our models to see which model performed the best on the training data. We are using the ROC_AUC because it provides a single scalar value that quantifies the overall performance of the model, making it easy to interpret and compare across different models. The ROC curve will also provide a visual representation of the model's performance across all classification thresholds. We will be creating three models: K-Nearest Neighbors, Random Forest, and Elastic Net Multi-Nominal Regression.
+We will now start building the models with our recipe we created earlier and we will be tuning our models with the folds we mentioned in the previous step. After tuning, we will examine the ROC_AUC metric across all of our models to see which model performed the best on the training data. We are using the ROC_AUC because it provides a single scalar value that quantifies the overall performance of the model, making it easy to interpret and compare across different models. The ROC (Receiver Operating Characteristic) Curve provides a graphical plot illustrating the trade-off between True Positive Rate and False Positive Rate at various classification thresholds. The ROC curve will also provide a visual representation of the model's performance across all classification thresholds. We will be creating three models: K-Nearest Neighbors, Random Forest, and Elastic Net Multi-Nominal Regression.
 
 ## Explanation of each model
 
@@ -228,6 +231,7 @@ Elastic Net Multi-Nominal Regression is a statistical technique that extends the
 We will first begin with splitting out data into training and testing data. The purpose of doing so is to build and train our predictive model on our training data and test the model on unseen data (the testing data). For this project, we will be using a 70/30 training to testing split.
 
 ```{r}
+set.seed(88)
 tesla_split <- initial_split(tesla_model, prop = 0.7, strata = no_stations)
 tesla_train <- training(tesla_split)
 tesla_test <- testing(tesla_split)
@@ -320,6 +324,7 @@ rf_grid <- grid_regular(mtry(range = c(1, 6)),
                         min_n(range = c(10, 20)),
                         levels = 5)
 
+# Elastic Net
 en_grid <- grid_regular(penalty(range = c(0, 1), trans = identity_trans()),
                         mixture(range = c(0, 1)), levels = 10)
 ```
@@ -328,7 +333,7 @@ en_grid <- grid_regular(penalty(range = c(0, 1), trans = identity_trans()),
 
 We will tune all three of our models and save them to their own rda file. We can load them back in anytime for faster load times and so we do not have to tune the models every time we want to see the results.
 
-```{r}
+```{r, eval=FALSE}
 # KNN 
 knn_tune <- tune_grid(knn_workflow, resamples = tesla_folds, grid = knn_grid)
 
@@ -405,13 +410,13 @@ final_compare_tibble <- final_compare_tibble %>%
 final_compare_tibble
 ```
 
-When comparing the models on the cross-validated data, we can see that the Random Forest model performed the best with a ROC_AUC of 0.7957143
+When comparing the models on the cross-validated data, we can see that the Random Forest model performed the best with a ROC_AUC of 0.8023810 Specifically, the model the random forest model with hyper parameters mtry = 2, trees = 500, and min_n	= 15 performed the best with the ROC_AUC of 0.8023810
 
 ```{r}
 autoplot(tune_rf, metric = "roc_auc")
 ```
 
-We can see from the autoplot of the tuned random forest the the the min_n (Minimal Node Size) had minor effect on the results. Across all minimal node sizes, the ROC_AUC metric was between 0.76 and 0.80. The lower the mtry values (# Randomly Selected Predictors) were, the higher the ROC_AUC and starts to decrease as mtry increases. The model performs the best at lower numbers of randomly selected predictors. The number of trees does seem to effect the results as each graph shows how the amount of trees affect the performance of the model. 
+We can see from the autoplot of the tuned random forest the the the min_n (Minimal Node Size) had minor effect on the results. Across all minimal node sizes, the ROC_AUC metric was between 0.77 and 0.80. Across all min_n values, the graphs follow similar trends. The lower the mtry values (# Randomly Selected Predictors) were, the higher the ROC_AUC and starts to decrease as mtry increases. The model performs the best at lower numbers of randomly selected predictors. The number of trees does seem to effect the results as each graph shows how the amount of trees affect the performance of the model. All the different tree levels seem to go all over the place between 0.77 and 0.80 across the graphs in a negative slope and seems inconsistent. 
 
 ## Fit Best Model To Our Training Data
 
@@ -433,6 +438,8 @@ tesla_predict %>%
   roc_auc(truth = no_stations, .pred_0)
 ```
 
+Our trained random forest model resulted in a ROC_AUC value of 0.7692688 on our testing data. The random forest actually performed slightly worse on the testing set than on the cross-validation folds which. This means that our model makes better prediction on the data it is being trained on vs data it has not seen. This can be the result of a multitude of reasons but it is mainly do to a low training and testing set. With more observations, the model is sure to perform better as it would be trained on more data. Despite this, the decrease is not too big, so suggests that our model is not overfitting. Overall, I would say that our model performed generally well. 
+
 ```{r}
 roc_curve(tesla_predict, truth = no_stations, .pred_0) %>% 
   autoplot()
@@ -441,20 +448,24 @@ conf_mat(tesla_predict, truth = no_stations,
          .pred_class) %>% 
   autoplot(type = "heatmap")
 ```
+Four our ROC_AUC, we can see that our model performed generally well. The graph looks good, as we want the curve to follow a trajectory that is as up and to the left as possible
+
 Based on the confusion matrix our model correctly predicted:
 
-37 cities with `no_stations` = 0 out of 46 cities correctly 
+38 cities with `no_stations` = 0 out of 46 cities correctly 
 
-27 cities with `no_stations` = 1 out of 44 cities correctly
+28 cities with `no_stations` = 1 out of 44 cities correctly
 
 # Conclusion 
-Throughout this project, we have created a dataset, conducted extensive research, and thoroughly explored and analyzed our data to build and test a model capable of predicting the number of stations in a city. After diligent analysis, testing, and computation, we determined that the Random Forest model was the most effective at predicting the aesthetic quality of a sunset. However, this model was not perfect and leaves room for improvement.
+Throughout this project, we have created a data set, conducted extensive research, and thoroughly explored and analyzed our data to build and test a model capable of predicting whether or not a city has zero Tesla Supercharging Stations. After diligent analysis, testing, and computation, we determined that the Random Forest model was the most effective at predicting the whether or not a city has zero Tesla Supercharging Stations. However, this model was not perfect and leaves room for improvement.
 
-One key area for improvement would be to train with a larger training split. Building a machine learning model on over one million observations can be technologically demanding, so I opted to use a smaller training proportion. With a dataset of only 280 observations, I would have liked to conduct more research to increase the number of observations. For example, by including data from all counties and cities, rather than focusing solely on California cities, we could have provided more data for the training split and gained a deeper understanding of how the variables are interconnected.
+One key area for improvement is to do deeper analysis in our random forest model. To identify why this model performed the best would require more analysis and possibly outside research. We can also look into why our other models did not perform as well as our random forest model.
 
-Expanding the data set to encompass all counties and cities would provide a richer, more diverse data pool, which could enhance the model's accuracy and generalizability. By including more geographical areas, we could uncover broader patterns and relationships that might not be evident in a more limited dataset. This expansion would not only improve the model's performance but also provide insights into the regional variations in station distribution.
+Another area for improvement would be expanding the data set to encompass all counties and cities which would provide a richer, more diverse data pool, which could enhance the model's accuracy and generalizability. By including more geographical areas, we could uncover broader patterns and relationships that might not be evident in our more limited dataset. This expansion would not only improve the model's performance but also provide insights into the regional variations in station distribution.
 
-If we were to continue this project and move forward with my analysis, I would like to explore how my model can be applied to data from other countries. This would involve examining the criteria and reasoning behind why certain cities have more superchargers than others, and determining whether a model like mine would be country-specific or universal. Additionally, future testing could involve applying the model to similar data from different states to assess its robustness and adaptability. By testing the model on diverse data sets, we can better understand its limitations and potential for broader application.
+Additionally, another area for improvement would be to train with a larger training split. With a dataset of only 296 observations, it is difficult to build strong models. In the future, we would like to conduct more research to increase the number of observations to build stronger models. For example, by including data from all cities, rather than focusing solely on California cities, we could have provided more data for the training split and gained a deeper understanding of how the variables are interconnected.
+
+If we were to continue this project and move forward with our analysis, we would like to explore how our model can be applied to data from other countries. This would involve examining the criteria and reasoning behind why certain cities have more superchargers than others, and determining whether a model like ours would be country-specific or universal. Additionally, future testing could involve applying the model to similar data from different states to assess its robustness and adaptability. By testing the model on diverse data sets, we can better understand its limitations and potential for broader application.
 
 By expanding the data set to include all counties and cities, as well as testing the model on data from different states and countries, it could provide valuable insights and improvements. These steps would help in developing a more accurate and versatile model capable of predicting station distribution across various regions.
 
