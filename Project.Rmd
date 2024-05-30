@@ -446,4 +446,10 @@ Based on the confusion matrix our model correctly predicted:
 27 cities with `no_stations` = 1 out of 44 cities correctly
 
 # Conclusion 
+Throughout this project, we have created a dataset, researched, explored, and analyzed our data and its variables in order to build and test a model that could predict how many station will be in a city. After diligent analysis, testing, and computing, we can say that the Random Forest model was the best at predicting the aesthetic quality of a sunset. Unfortunately, this model was not perfect, and leaves room for improvement.
+
+Some areas of improvement would be to train with a larger training split. Since building a machine learning model on over one million observations can be technologically demanding, I chose to build my models on a smaller training proportion. Additionally, I would like to do more research on the data set to increase the amount of observation so that my training split had more data to work with, as well as to get a deeper understanding of how variables can be connected. Another limitation was that some variables were not that specific.
+
+If I were to continue this project and move forward with my analysis, I would like to explore how my model can work for data from other countries. This can dive deeper into the criteria and reasoning on why certain cities have more superchargers than other and determine whether a model like mine would be country specific or universal.
+
 
