@@ -410,7 +410,7 @@ final_compare_tibble <- final_compare_tibble %>%
 final_compare_tibble
 ```
 
-When comparing the models on the cross-validated data, we can see that the Random Forest model performed the best with a ROC_AUC of 0.8023810 Specifically, the model the random forest model with hyper parameters mtry = 2, trees = 500, and min_n	= 15 performed the best with the ROC_AUC of 0.8023810
+When comparing the models on the cross-validated data, we can see that the Random Forest model performed the best with a ROC_AUC of 0.8023810.
 
 ```{r}
 autoplot(tune_rf, metric = "roc_auc")
@@ -426,7 +426,10 @@ We will now take the best model from the tuned random forest model and fit it to
 best_rf <- select_best(tune_rf, metric = 'roc_auc')
 rf_final_workflow_train <- finalize_workflow(random_forest_workflow, best_rf)
 rf_final_fit_train <- fit(rf_final_workflow_train, data = tesla_train)
+best_rf
 ```
+
+Specifically, the random forest model thathas hyper parameters mtry = 2, trees = 500, and min_n	= 15 performs the best with a ROC_AUC of 0.8023810 
 
 ## Testing The Model On Testing Data
 
@@ -470,5 +473,3 @@ Additionally, another area for improvement would be to train with a larger train
 If we were to continue this project and move forward with our analysis, we would like to explore how our model can be applied to data from other countries. This would involve examining the criteria and reasoning behind why certain cities have more superchargers than others, and determining whether a model like ours would be country-specific or universal. Additionally, future testing could involve applying the model to similar data from different states to assess its robustness and adaptability. By testing the model on diverse data sets, we can better understand its limitations and potential for broader application.
 
 By expanding the data set to include all counties and cities, as well as testing the model on data from different states and countries, it could provide valuable insights and improvements. These steps would help in developing a more accurate and versatile model capable of predicting station distribution across various regions.
-
-
