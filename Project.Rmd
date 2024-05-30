@@ -83,7 +83,7 @@ As for how the data was collected, the parameters:
 
 `registered_voter`, `democratic`, and `republican` were scraped from [Report of Registration](https://www.sos.ca.gov/elections/report-registration/88day-primary-2022). This data comes from the California Secretary of State and was reported on March 11, 2022.
 
-`no_stations`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and `total` were scraped from [Supercharge.io](https://supercharge.info/changes), a community based forum centered on Tesla Supercharger data world-wide. The data we collected from Supercharge.io was done on April 30, 2024.
+`no_stations`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and `total` were scraped from [Supercharge.io](https://supercharge.info/changes), a community based forum centered on Tesla Supercharger data world-wide. The data we collected from Supercharge.io was done on April 30, 2024. By searching each city, we were able to find the amount of stations, the amount of chargers, and station types of each city.
 
 `mile` was self obtained from Google Maps using the "Measure Distance" feature. This distance was measured from each Tesla Supercharger station to the nearest highway/freeway enterance.
 
@@ -123,19 +123,7 @@ From the 2 graphs, we can see the distribution of the number of stations for eac
 
 In the second graph, we have lumped observations with one or more station into one category. We can see that we have about equal observations of cities with 0 chargers and cities with at least one charging station.
 
-## Graph of Population vs Total Number of Chargers
-
-```{r}
-ggplot(tesla, aes(x = population, y = total)) +
-  geom_point() +
-  labs(title = "Population vs. Total Number of Chargers",
-       x = "Population (2022)",
-       y = "Total Number of Chargers")
-```
-
-In the Population v.s. Total Number of Chargers graph, we can see that majority of our observations are clustered to the bottom left. We can also see a slight positive correlation, however it is not a strong positive correlation.
-
-## Graph of County vs. Tesla Supercharging Station Presence
+## Bar Chart of County vs. Tesla Supercharging Station Presence
 
 ```{r, fig.width= 5, fig.height=5}
 ggplot(tesla, aes(x = county, fill = no_stations)) + 
@@ -154,14 +142,18 @@ tesla %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-In this Number of Stations v.s. Population by County stacked bar chart we can see that
+In this County vs. Tesla Supercharging Station Presence bar chart we can see the distribution of no_stations across all the counties from our data set. The first chart shows each county on the x-axis and the y-axis counts the number of cities that have the corresponding number of charging stations according to the colored legend. In the first chart, we can see that Los Angeles has the most observations. This makes sense since Los Angeles county has the greatest amount of cities amongst the other counties in out data set. We can also see that majority of the counties have cities with 0 chargers. When we look at the second chart, we have lumped observations with one or more station into one category. Now we are seeing a completely different comparison in every county where some counties even have more cities that have at least one station than cities that have no stations. 
+
+## Graph of Population v.s. Number of Stations by County
 
 ```{r}
 ggplot(tesla, aes(x=population, y=no_stations, col=county))+
   geom_point() 
 ```
 
-In this graph, we can
+In the Population v.s. Number of Stations graph, we can see that majority of our observations are clustered to the bottom left. We can also see a slight positive correlation, however it is not a strong positive correlation. Each observation is color coated by their county. We do not see an apparent trend from each observation's county. 
+
+## Political Affiliation v.s. Tesla Supercharging Station Presence
 
 ```{r}
 tesla$democratic_proportion <- tesla$democratic / tesla$registered_voter
@@ -176,9 +168,9 @@ ggplot(tesla, aes(x = no_stations, y = republican_proportion)) +
   geom_boxplot() + 
   theme_minimal() + 
   labs(title = "Republican Proportion vs. Tesla Supercharging Station Presence")
-
 ```
 
+In the Political Affiliation v.s. Tesla Supercharging Station Presence plot, it shows the proportion of political affiliation among registered voters of each city to the number of stations a city has. We can see that overall, cities with 
 
 # Preparing Our Data Set For Model Building 
 
