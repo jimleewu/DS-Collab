@@ -424,13 +424,14 @@ rf_final_fit_train <- fit(rf_final_workflow_train, data = tesla_train)
 
 ## Testing The Model On Testing Data
 
-We wil; finally test our trained random forest model on our unseen testing data. 
+We will finally test our trained random forest model on our unseen testing data. 
 
 ```{r}
 tesla_predict <- augment(rf_final_fit_train, new_data = tesla_test)
 tesla_predict %>%
   roc_auc(truth = no_stations, .pred_0)
 ```
+
 ```{r}
 roc_curve(tesla_predict, truth = no_stations, .pred_0) %>% 
   autoplot()
@@ -446,10 +447,14 @@ Based on the confusion matrix our model correctly predicted:
 27 cities with `no_stations` = 1 out of 44 cities correctly
 
 # Conclusion 
-Throughout this project, we have created a dataset, researched, explored, and analyzed our data and its variables in order to build and test a model that could predict how many station will be in a city. After diligent analysis, testing, and computing, we can say that the Random Forest model was the best at predicting the aesthetic quality of a sunset. Unfortunately, this model was not perfect, and leaves room for improvement.
+Throughout this project, we have created a dataset, conducted extensive research, and thoroughly explored and analyzed our data to build and test a model capable of predicting the number of stations in a city. After diligent analysis, testing, and computation, we determined that the Random Forest model was the most effective at predicting the aesthetic quality of a sunset. However, this model was not perfect and leaves room for improvement.
 
-Some areas of improvement would be to train with a larger training split. Since building a machine learning model on over one million observations can be technologically demanding, I chose to build my models on a smaller training proportion. Additionally, I would like to do more research on the data set to increase the amount of observation so that my training split had more data to work with, as well as to get a deeper understanding of how variables can be connected. Another limitation was that some variables were not that specific.
+One key area for improvement would be to train with a larger training split. Building a machine learning model on over one million observations can be technologically demanding, so I opted to use a smaller training proportion. With a dataset of only 280 observations, I would have liked to conduct more research to increase the number of observations. For example, by including data from all counties and cities, rather than focusing solely on California cities, we could have provided more data for the training split and gained a deeper understanding of how the variables are interconnected.
 
-If I were to continue this project and move forward with my analysis, I would like to explore how my model can work for data from other countries. This can dive deeper into the criteria and reasoning on why certain cities have more superchargers than other and determine whether a model like mine would be country specific or universal.
+Expanding the dataset to encompass all counties and cities would provide a richer, more diverse data pool, which could enhance the model's accuracy and generalizability. By including more geographical areas, we could uncover broader patterns and relationships that might not be evident in a more limited dataset. This expansion would not only improve the model's performance but also provide insights into the regional variations in station distribution.
+
+If I were to continue this project and move forward with my analysis, I would like to explore how my model can be applied to data from other countries. This would involve examining the criteria and reasoning behind why certain cities have more superchargers than others, and determining whether a model like mine would be country-specific or universal. Additionally, future testing could involve applying the model to similar data from different states to assess its robustness and adaptability. By testing the model on diverse datasets, we can better understand its limitations and potential for broader application.
+
+By expanding the dataset to include all counties and cities, as well as testing the model on data from different states and countries, would provide valuable insights and improvements. These steps would help in developing a more accurate and versatile model capable of predicting station distribution across various regions.
 
 
