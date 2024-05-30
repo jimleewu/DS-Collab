@@ -27,6 +27,10 @@ library(ggplot2)
 
 There has been an increasing rise in popularity in electronic vehicles (EVs) throughout the past decade for its environmental, economic, and performance benefits. With so many EVs filling the streets, a need for a proper EV charging infrastructure is needed. Just like gasoline cars, EV drivers require charging stations where they can recharge when going long distances.
 
+# Goal Of This Project
+
+The goal of this project is to develop a prediction model that is able to predict whether or not a city has a Tesla Supercharger given demographic data about the city. In this project, we will explore data scraping as we will be collecting our own data. After collecting our data, we will utilize different machine learning models to develop an adequate perdiction model and data analysis methods to analyze our data set and performance of our models. 
+
 # Dataset
 
 The data set that we will be working on in this project is called `tesla`. The data consist of all cities from highly populated counties in California. The counties in our data set consist of Alameda, Contra Costa, Fresno, Kern, Los Angeles, Orange, Riverside, Sacramento, San Diego, San Francisco, San Joaquin, San Mateo, Santa Barbara, Santa Clara, Stanislaus, and Ventura. We collected demographic data and Tesla Supercharging data for each city in the before mention counties.
@@ -131,11 +135,23 @@ ggplot(tesla, aes(x = population, y = total)) +
 
 In the Population v.s. Total Number of Chargers graph, we can see that majority of our observations are clustered to the bottom left. We can also see a slight positive correlation, however it is not a strong positive correlation.
 
-## Number of Stations v.s. Population by County
+## Graph of County vs. Tesla Supercharging Station Presence
 
-```{r}
-ggplot(tesla, aes(fill=county, y=population, x=no_stations)) + 
-    geom_bar(position="stack", stat="identity")
+```{r, fig.width= 5, fig.height=5}
+ggplot(tesla, aes(x = county, fill = no_stations)) + 
+  geom_bar(position = "dodge") + 
+  theme_minimal() + 
+  labs(title = "County vs. Tesla Supercharging Station Presence") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+tesla %>% 
+  mutate(no_stations = as.factor(no_stations)) %>%
+  mutate(no_stations = fct_lump_n(no_stations, n = 1, other_level = "1+ Stations",)) %>%
+  ggplot(aes(x = county, fill = no_stations)) + 
+  geom_bar(position = "dodge") + 
+  theme_minimal() + 
+  labs(title = "County vs. Tesla Supercharging Station Presence") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
 In this Number of Stations v.s. Population by County stacked bar chart we can see that
@@ -144,6 +160,25 @@ In this Number of Stations v.s. Population by County stacked bar chart we can se
 ggplot(tesla, aes(x=population, y=no_stations, col=county))+
   geom_point() 
 ```
+
+In this graph, we can
+
+```{r}
+tesla$democratic_proportion <- tesla$democratic / tesla$registered_voter
+tesla$republican_proportion <- tesla$republican / tesla$registered_voter
+
+ggplot(tesla, aes(x = no_stations, y = democratic_proportion)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(title = "Democratic Proportion vs. Tesla Supercharging Station Presence")
+
+ggplot(tesla, aes(x = no_stations, y = republican_proportion)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(title = "Republican Proportion vs. Tesla Supercharging Station Presence")
+
+```
+
 
 # Preparing Our Data Set For Model Building 
 
