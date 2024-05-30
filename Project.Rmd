@@ -11,6 +11,7 @@ output:
 ---
 
 ```{r}
+library(dplyr)
 library(tidyverse)
 library(tidymodels)
 library(rsample)
@@ -117,7 +118,7 @@ From the 2 graphs, we can see the distribution of the number of stations for eac
 
 In the second graph, we have lumped observations with one or more station into one category. We can see that we have about equal observations of cities with 0 chargers and cities with at least one charging station. 
 
-##
+## Graph of Population vs Total Number of Chargers
 
 ```{r}
 ggplot(tesla, aes(x = population, y = total)) +
@@ -127,45 +128,21 @@ ggplot(tesla, aes(x = population, y = total)) +
        y = "Total Number of Chargers")
 ```
 
-```{r}
-data_long <- tesla %>%
-  pivot_longer(cols = starts_with("no_"), names_to = "charger_type", values_to = "count")
+In the Population v.s. Total Number of Chargers graph, we can see that majority of our observations are clustered to the bottom left. We can also see a slight positive correlation, however it is not a strong positive correlation. 
 
-ggplot(data_long, aes(x = city, y = count, fill = charger_type)) +
-  geom_bar(stat = "identity", position = "stack") +
-  labs(title = "Number of Different Types of Chargers by City",
-       x = "City",
-       y = "Count",
-       fill = "Charger Type") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-```{r}
-ggplot(tesla, aes(x = city, y = mile)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +
-  labs(title = "Number of Tesla Supercharger Stations within One Mile of a Highway by City",
-       x = "City",
-       y = "Number of Stations")
-```
+## Number of Stations v.s. Population by County
 
 ```{r}
 ggplot(tesla, aes(fill=county, y=population, x=no_stations)) + 
     geom_bar(position="stack", stat="identity")
 ```
 
+In this Number of Stations v.s. Population by County stacked bar chart we can see that 
+
 ```{r}
 ggplot(tesla, aes(x=population, y=no_stations, col=county))+
   geom_point() 
 ```
-
-
-
-
-
-
-
 
 ```{r}
 tesla_model <- tesla %>%
@@ -180,7 +157,7 @@ tesla_model %>%  # none of our cities contain a v4 charger
 
 # Model Building
 
-We will be removing the following variables: `city`, `mile`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and total. We are doing this because we want to build a model that can predict the no_stations based on demographic data of each observation. This updated data set will be called `tesla_model`
+For our model recipe, we will be removing the following variables: `city`, `mile`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and total. We are doing this because we want to build a model that can predict the no_stations based on demographic data of each observation. This updated data set will be called `tesla_model`
 
 ```{r}
 tesla_model <- tesla %>%
@@ -246,13 +223,6 @@ elastic_model <- linear_reg(mixture = tune(),
     penalty = tune()) %>%
   set_mode("regression") %>%
   set_engine("glmnet")
-
-# Boosted Tree
-boosted_tree_model <- boost_tree(mtry = tune(), 
-                           trees = tune(), 
-                           learn_rate = tune()) %>%
-  set_engine("xgboost") %>% 
-  set_mode("regression")
 ```
 
 2. Creating Workflow
@@ -271,12 +241,6 @@ knn_workflow <- workflow() %>%
 random_forest_workflow <- workflow() %>%
   add_model(random_forest_model) %>%
   add_recipe(tesla_recipe)
-
-# Boosted Tree
-boosted_tree_workflow <- workflow() %>% 
-  add_model(boosted_tree_model) %>% 
-  add_recipe(tesla_recipe)
-
 ```
 
 3. Creating Grid
@@ -289,13 +253,6 @@ rf_grid <- grid_regular(mtry(range = c(1, 6)),
                         trees(range = c(200, 600)),
                         min_n(range = c(10, 20)),
                         levels = 5)
-
-# Boosted Tree
-bt_grid <- grid_regular(mtry(range = c(1, 6)), 
-                        trees(range = c(200, 600)),
-                        learn_rate(range = c(-10, -1)),
-                        levels = 5)
-
 ```
 
 4. Tune Model
@@ -306,9 +263,6 @@ knn_tune <- tune_grid(knn_workflow, resamples = tesla_folds, grid = knn_grid)
 # Random Forest
 tune_rf <- tune_grid(
   object = random_forest_workflow, resamples = tesla_folds, grid = rf_grid)
-
-# Boosted Tree
-bt_tune <- tune_grid(boosted_tree_workflow, resamples = tesla_folds, grid = bt_grid)
 
 ```
 
@@ -328,26 +282,55 @@ rf_rmse <- collect_metrics(tune_rf) %>%
   filter(.metric=='rmse') %>%
   arrange(mean)
 
-# Boosted Tree
-bt_rms <- collect_metrics(bt_tune) %>%
-  filter(.metric=='rmse') %>%
-  arrange(mean)
+lm_mean <- head(lm_rmse, n=1)
+knn_mean <- head(knn_rmse, n=1)
+rf_mean <- head(rf_rmse, n=1)
 
-lm_rmse
-knn_rmse
-rf_rmse
-bt_rms
+lm_mean
+knn_mean
+rf_mean
 ```
 
 5. Fitting the model
 ```{r}
-# KNN
-knn_final <- finalize_workflow(knn_workflow, select_best(knn_tune))
-knn_final
-knn_final_fit <- fit(knn_final, tesla_train)
-knn_final_fit
+# Creating a tibble of all the models and their RMSE
+final_compare_tibble <- tibble(Model = c("Linear Regression", "K Nearest Neighbors", "Random Forest"), RMSE = c(lm_mean$mean, knn_mean$mean, rf_mean$mean))
 
-# Boosted Tree
-bt_final <- finalize_workflow(boosted_tree_workflow, select_best(bt_tune))
-bt_final_fit <- fit(bt_final, tesla_train)
+ggplot(final_compare_tibble, aes(x=reorder(Model, +RMSE), y=RMSE)) +
+  geom_bar(stat = "identity", aes(fill = Model)) +
+  scale_fill_manual(values = c("blue", "red", "orange")) +
+  theme(legend.position = "none") +
+  labs(title = "Comparing RMSE by Model", x = "Models")
+
+# Arranging by lowest RMSE
+final_compare_tibble <- final_compare_tibble %>% 
+  arrange(RMSE)
+
+final_compare_tibble
 ```
+When comparing the models on the cross-validated data, we can see that the Random Forest model performed the best with a RMSE of 1.055483. 
+
+```{r}
+autoplot(tune_rf, metric = "rmse")
+```
+
+
+```{r}
+best_rf <- select_best(tune_rf, metric = 'rmse')
+rf_final_workflow_train <- finalize_workflow(random_forest_workflow, best_rf)
+rf_final_fit_train <- fit(rf_final_workflow_train, data = tesla_train)
+```
+
+```{r}
+tesla_tibble <- predict(rf_final_fit_train, new_data = tesla_test %>% select(-no_stations))
+tesla_tibble <- bind_cols(tesla_tibble, tesla_test %>% select(no_stations))
+```
+
+```{r}
+tesla_metric <- metric_set(rmse)
+
+# Collecting the rmse of the model on the testing data
+tesla_tibble_metrics <- tesla_metric(tesla_tibble, truth = no_stations, estimate = .pred)
+tesla_tibble_metrics
+```
+
