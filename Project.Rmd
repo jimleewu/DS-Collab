@@ -93,8 +93,11 @@ tesla <- tesla %>%
 tesla
 ```
 
-## Exploratory Data Analysis
+# Exploratory Data Analysis
 
+To further analyze our data set, we will do a bit of exploratory data analysis.
+
+## Distribution of number of stations
 
 ```{r}
 tesla %>% 
@@ -109,6 +112,12 @@ tesla %>%
   geom_bar(fill = "black") + 
   labs(title = "Distribution of Number of Stations")
 ```
+
+From the 2 graphs, we can see the distribution of the number of stations for each of our observations (cities). The first graph shows us the full distribution of all our observations. From this graph, we can see that the majority of our observations have 0 stations. For observations that do have stations, majority of them have only one charging station. The overall distribution is right skewed.
+
+In the second graph, we have lumped observations with one or more station into one category. We can see that we have about equal observations of cities with 0 chargers and cities with at least one charging station. 
+
+##
 
 ```{r}
 ggplot(tesla, aes(x = population, y = total)) +
