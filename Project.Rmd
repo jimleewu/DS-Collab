@@ -51,7 +51,7 @@ The data set that we will be working on in this project is called `tesla`. The d
 
 `republican`the number of registered voters declared as republican (March 11, 2022)
 
-`no_stations` the number of Tesla Supercharger stations
+`no_stations` the number of Tesla Supercharger stations. This will later be changed to 0 if there are 0 stations and 1 if there is at least one station.
 
 `mile` the number of stations that are less than one mile from a highway/freeway
 
@@ -90,7 +90,8 @@ Lets load the data set and view it.
 ```{r}
 tesla <- read.csv("Tesla Dataset.csv")
 tesla <- tesla %>%
-  mutate(county = as.factor(county))
+  mutate(county = as.factor(county)) %>%
+  mutate(no_stations = as.factor(no_stations))
 tesla
 ```
 
@@ -103,20 +104,20 @@ To further analyze our data set, we will do a bit of exploratory data analysis.
 ```{r}
 tesla %>% 
   ggplot(aes(no_stations)) + 
-  geom_bar(fill = "black") + 
+  geom_bar(fill = "red") + 
   labs(title = "Distribution of Number of Stations")
 
 tesla %>% 
   mutate(no_stations = as.factor(no_stations)) %>%
   mutate(no_stations = fct_lump_n(no_stations, n = 1, other_level = "1+ Stations",)) %>%
   ggplot(aes(no_stations)) + 
-  geom_bar(fill = "black") + 
+  geom_bar(fill = "red") + 
   labs(title = "Distribution of Number of Stations")
 ```
 
 From the 2 graphs, we can see the distribution of the number of stations for each of our observations (cities). The first graph shows us the full distribution of all our observations. From this graph, we can see that the majority of our observations have 0 stations. For observations that do have stations, majority of them have only one charging station. The overall distribution is right skewed.
 
-In the second graph, we have lumped observations with one or more station into one category. We can see that we have about equal observations of cities with 0 chargers and cities with at least one charging station. 
+In the second graph, we have lumped observations with one or more station into one category. We can see that we have about equal observations of cities with 0 chargers and cities with at least one charging station.
 
 ## Graph of Population vs Total Number of Chargers
 
@@ -128,7 +129,7 @@ ggplot(tesla, aes(x = population, y = total)) +
        y = "Total Number of Chargers")
 ```
 
-In the Population v.s. Total Number of Chargers graph, we can see that majority of our observations are clustered to the bottom left. We can also see a slight positive correlation, however it is not a strong positive correlation. 
+In the Population v.s. Total Number of Chargers graph, we can see that majority of our observations are clustered to the bottom left. We can also see a slight positive correlation, however it is not a strong positive correlation.
 
 ## Number of Stations v.s. Population by County
 
@@ -137,30 +138,20 @@ ggplot(tesla, aes(fill=county, y=population, x=no_stations)) +
     geom_bar(position="stack", stat="identity")
 ```
 
-In this Number of Stations v.s. Population by County stacked bar chart we can see that 
+In this Number of Stations v.s. Population by County stacked bar chart we can see that
 
 ```{r}
 ggplot(tesla, aes(x=population, y=no_stations, col=county))+
   geom_point() 
 ```
 
-```{r}
-tesla_model <- tesla %>%
-  select_if(is.numeric) %>%
-  select(-no_v4)
-
-
-tesla_model %>%  # none of our cities contain a v4 charger
-  cor() %>%
-  corrplot.mixed()
-```
-
-# Model Building
+# Preparing Our Data Set For Model Building 
 
 For our model recipe, we will be removing the following variables: `city`, `mile`, `more_than_12`, `no_v2`, `no_urban`, `no_v3`, `no_v4`, and total. We are doing this because we want to build a model that can predict the no_stations based on demographic data of each observation. This updated data set will be called `tesla_model`
 
 ```{r}
 tesla_model <- tesla %>%
+  mutate(no_stations = fct_lump_n(no_stations, n = 1, other_level = "1")) %>%
   select(-city) %>%
   select(-mile) %>%
   select(-more_than_12) %>%
@@ -172,6 +163,18 @@ tesla_model <- tesla %>%
 
 head(tesla_model)
 ```
+
+```{r}
+corr_model <- tesla_model %>%
+  mutate(no_stations = as.numeric(no_stations)) %>%
+  select_if(is.numeric) 
+
+corr_model %>%
+  cor() %>%
+  corrplot.mixed()
+```
+
+# Model Building
 
 ## Data Split
 
@@ -196,42 +199,53 @@ tesla_recipe <- recipe(no_stations ~  county + population + land_size +
 
 ## Model
 
+We will now start building the models with our recipe we created earlier and we will be tuning our models with the folds we mentioned in the previous step. After tuning, we will examine the ROC_AUC metric across all of our models to see which model performed the best on the training data. We are using the ROC_AUC because it provides a single scalar value that quantifies the overall performance of the model, making it easy to interpret and compare across different models. The ROC curve will also provide a visual representation of the model's performance across all classification thresholds. We will be creating three models: K-Nearest Neighbors, Random Forest, and Elastic Net Multi-Nominal Regression.
+
+## K-Fold Cross Validation
+
+We will employ a k-fold stratified cross-validation approach with 5 folds, where the data set is divided into 5 equal-sized folds. During each iteration, one fold is reserved as the testing set, while the remaining 4 folds (k-1) collectively form the training set. This process is repeated until each fold has served as the testing set exactly once. Subsequently, the model is trained on each training set and evaluated on the corresponding testing set. The average accuracy across all folds is then computed to gauge performance. Metrics like ROC_AUC, accuracy, and standard error can be reviewed to determine performace. This methodology offers a more robust estimate of testing accuracy compared to training on the entire dataset, as it reduces variability by averaging results over multiple iterations.
+
 ```{r}
 tesla_folds <- vfold_cv(tesla_train, v = 5, strata = no_stations)
 ```
 
-1. Setting up the model
-```{r}
-# Linear Model
-lm_model <- linear_reg() %>% 
-  set_engine("lm")
+### K - Nearest Neightbors 
 
+The k-Nearest Neighbors (k-NN) classification model is a straightforward and intuitive machine learning algorithm used for classifying data points based on the categories of their nearest neighbors. It operates by storing all the training data and does not involve a traditional training phase. When a new data point needs to be classified, the algorithm calculates the distance between this point and all points in the training dataset using a distance metric such as Euclidean distance. It then identifies the k nearest neighbors to the query point, where k is a user-defined constant. The new data point is classified based on a majority vote among the k nearest neighbors, meaning it is assigned the class that is most common among these neighbors. k-NN can be computationally intensive and sensitive to irrelevant features and high-dimensional data. Despite its limitations, k-NN remains a powerful tool for both classification and regression tasks, particularly when interpretability and simplicity are crucial.
+
+### Random Forest
+
+Random Forest is a versatile ensemble learning technique that utilizes the collective predictions of multiple decision trees to produce robust and accurate models. Each decision tree in the forest is trained independently on a random subset of the training data and a random subset of the features. This randomness helps to decorrelate the trees, reducing the risk of overfitting and improving generalization. During prediction, the results of individual trees are aggregated, typically through averaging for regression tasks or voting for classification tasks, to produce the final prediction. Random Forest models are known for their robustness to noisy data, ability to handle high-dimensional datasets, and automatic feature selection capabilities, making them widely applicable across various domains.
+
+#### Elastic Net Multi-Nominal Regression
+
+Elastic Net Multi-Nominal Regression is a statistical technique that extends the traditional multinomial logistic regression model by incorporating both L1 (Lasso) and L2 (Ridge) regularization penalties. This hybrid regularization technique helps address issues such as multicollinearity and overfitting by penalizing the absolute size of the coefficients (L1 penalty) and their squared magnitude (L2 penalty). Elastic Net regression is particularly useful when dealing with high-dimensional datasets with many correlated predictors, as it encourages sparsity while also providing some level of stability and robustness. Elastic Net Multi-Nominal Regression is commonly used in machine learning and predictive modeling tasks where the goal is to classify observations into multiple categories based on a set of predictor variables.
+
+1.  Setting up the model
+
+```{r}
 # KNN
 knn_model <- nearest_neighbor(neighbors = tune()) %>%
   set_engine("kknn") %>%
-  set_mode("regression")
+  set_mode("classification")
 
 # Random Forest
 random_forest_model <- rand_forest(mtry=tune(),
                                  trees = tune(),
                                  min_n = tune()) %>%
   set_engine("ranger") %>%
-  set_mode("regression")
+  set_mode("classification")
 
 # Elastic Net
-elastic_model <- linear_reg(mixture = tune(), 
+elastic_model <- multinom_reg(mixture = tune(), 
     penalty = tune()) %>%
-  set_mode("regression") %>%
-  set_engine("glmnet")
+  set_engine("glmnet") %>%
+  set_mode("classification")
 ```
 
-2. Creating Workflow
-```{r}
-# Linear Model
-lm_workflow <- workflow() %>% 
-  add_model(lm_model) %>% 
-  add_recipe(tesla_recipe)
+2.  Creating Workflow
 
+```{r}
 # KNN
 knn_workflow <- workflow() %>% 
   add_model(knn_model) %>% 
@@ -241,9 +255,16 @@ knn_workflow <- workflow() %>%
 random_forest_workflow <- workflow() %>%
   add_model(random_forest_model) %>%
   add_recipe(tesla_recipe)
+
+# Elastic Net
+elastic_workflow <- workflow() %>%
+  add_model(elastic_model) %>%
+  add_recipe(tesla_recipe)
+
 ```
 
-3. Creating Grid
+3.  Creating Grid
+
 ```{r}
 # KNN
 knn_grid <- grid_regular(neighbors(range = c(1,10)), levels = 10)
@@ -253,9 +274,13 @@ rf_grid <- grid_regular(mtry(range = c(1, 6)),
                         trees(range = c(200, 600)),
                         min_n(range = c(10, 20)),
                         levels = 5)
+
+en_grid <- grid_regular(penalty(range = c(0, 1), trans = identity_trans()),
+                        mixture(range = c(0, 1)), levels = 10)
 ```
 
-4. Tune Model
+4.  Tune Model
+
 ```{r}
 # KNN 
 knn_tune <- tune_grid(knn_workflow, resamples = tesla_folds, grid = knn_grid)
@@ -264,73 +289,90 @@ knn_tune <- tune_grid(knn_workflow, resamples = tesla_folds, grid = knn_grid)
 tune_rf <- tune_grid(
   object = random_forest_workflow, resamples = tesla_folds, grid = rf_grid)
 
+# Elastic Net
+tune_elastic <- tune_grid(
+  object = elastic_workflow, resamples = tesla_folds, grid = en_grid)
+
+save(knn_tune, file = "knn_tune.rda")
+save(tune_rf, file = "tune_rf.rda")
+save(tune_elastic, file = "tune_elastic.rda")
 ```
 
-5. Collect metrics
 ```{r}
-# Linear Model
-lm_fit <- fit_resamples(lm_workflow, resamples = tesla_folds)
-lm_rmse <- collect_metrics(lm_fit)
+load("knn_tune.rda")
+load("tune_rf.rda")
+load("tune_elastic.rda")
+```
 
+5.  Collect metrics
+
+```{r}
 # KNN
-knn_rmse <- collect_metrics(knn_tune) %>%
-  filter(.metric=='rmse')%>%
-  arrange(mean)
+knn_roc_auc <- collect_metrics(knn_tune) %>%
+  filter(.metric=='roc_auc')%>%
+  arrange(desc(mean))
 
 # Random Forest
-rf_rmse <- collect_metrics(tune_rf) %>%
-  filter(.metric=='rmse') %>%
-  arrange(mean)
+rf_roc_auc <- collect_metrics(tune_rf) %>%
+  filter(.metric=='roc_auc') %>%
+  arrange(desc(mean))
 
-lm_mean <- head(lm_rmse, n=1)
-knn_mean <- head(knn_rmse, n=1)
-rf_mean <- head(rf_rmse, n=1)
+# Elastic Net
+elastic_roc_auc <- collect_metrics(tune_elastic) %>%
+  filter(.metric=='roc_auc') %>%
+  arrange(desc(mean))
 
-lm_mean
+knn_mean <- head(knn_roc_auc, n=1)
+rf_mean <- head(rf_roc_auc, n=1)
+elastic_mean <- head(elastic_roc_auc, n=1)
+
 knn_mean
 rf_mean
+elastic_mean
 ```
 
-5. Fitting the model
+5.  Fitting the model
+
 ```{r}
 # Creating a tibble of all the models and their RMSE
-final_compare_tibble <- tibble(Model = c("Linear Regression", "K Nearest Neighbors", "Random Forest"), RMSE = c(lm_mean$mean, knn_mean$mean, rf_mean$mean))
+final_compare_tibble <- tibble(Model = c("K Nearest Neighbors", "Random Forest", "Elastic Net"), ROC_AUC = c(knn_mean$mean, rf_mean$mean, elastic_mean$mean))
 
-ggplot(final_compare_tibble, aes(x=reorder(Model, +RMSE), y=RMSE)) +
+ggplot(final_compare_tibble, aes(x=reorder(Model, -ROC_AUC), y=ROC_AUC)) +
   geom_bar(stat = "identity", aes(fill = Model)) +
   scale_fill_manual(values = c("blue", "red", "orange")) +
   theme(legend.position = "none") +
-  labs(title = "Comparing RMSE by Model", x = "Models")
+  labs(title = "Comparing ROC_AUC by Model", x = "Models")
 
 # Arranging by lowest RMSE
 final_compare_tibble <- final_compare_tibble %>% 
-  arrange(RMSE)
+  arrange(desc(ROC_AUC))
 
 final_compare_tibble
 ```
-When comparing the models on the cross-validated data, we can see that the Random Forest model performed the best with a RMSE of 1.055483. 
+
+When comparing the models on the cross-validated data, we can see that the Random Forest model performed the best with a ROC_AUC of 0.7957143
 
 ```{r}
-autoplot(tune_rf, metric = "rmse")
+autoplot(tune_rf, metric = "roc_auc")
 ```
 
-
 ```{r}
-best_rf <- select_best(tune_rf, metric = 'rmse')
+best_rf <- select_best(tune_rf, metric = 'roc_auc')
 rf_final_workflow_train <- finalize_workflow(random_forest_workflow, best_rf)
 rf_final_fit_train <- fit(rf_final_workflow_train, data = tesla_train)
 ```
 
 ```{r}
-tesla_tibble <- predict(rf_final_fit_train, new_data = tesla_test %>% select(-no_stations))
-tesla_tibble <- bind_cols(tesla_tibble, tesla_test %>% select(no_stations))
+tesla_predict <- augment(rf_final_fit_train, new_data = tesla_test)
+tesla_predict %>%
+  roc_auc(truth = no_stations, .pred_0)
 ```
-
 ```{r}
-tesla_metric <- metric_set(rmse)
+roc_curve(tesla_predict, truth = no_stations, .pred_0) %>% 
+  autoplot()
 
-# Collecting the rmse of the model on the testing data
-tesla_tibble_metrics <- tesla_metric(tesla_tibble, truth = no_stations, estimate = .pred)
-tesla_tibble_metrics
+conf_mat(tesla_predict, truth = no_stations, 
+         .pred_class) %>% 
+  autoplot(type = "heatmap")
 ```
 
