@@ -448,7 +448,9 @@ conf_mat(tesla_predict, truth = no_stations,
          .pred_class) %>% 
   autoplot(type = "heatmap")
 ```
-Four our ROC_AUC, we can see that our model performed generally well. The graph looks good, as we want the curve to follow a trajectory that is as up and to the left as possible
+
+
+For our ROC_AUC, we can see that our model performed generally well. The graph looks good, as we want the curve to follow a trajectory that is as up and to the left as possible
 
 Based on the confusion matrix our model correctly predicted:
 
